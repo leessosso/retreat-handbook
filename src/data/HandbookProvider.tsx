@@ -32,18 +32,42 @@ export function HandbookProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    loadHandbook()
-      .then((data) => {
+    let lastAt = 0
+    let first = true
+
+    async function refresh(force: boolean) {
+      if (cancelled) return
+      if (!force && document.visibilityState === 'hidden') return
+      const now = Date.now()
+      if (!force && now - lastAt < 4000) return
+      try {
+        const data = await loadHandbook()
         if (cancelled) return
+        lastAt = Date.now()
         setPublished(data)
-        setPreview(readStoredPreview())
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return
+        if (first) {
+          first = false
+          setPreview(readStoredPreview())
+        }
+      } catch (err: unknown) {
+        if (cancelled || !first) return
+        first = false
         setError(err instanceof Error ? err.message : '핸드북 데이터를 읽지 못했습니다.')
-      })
+      }
+    }
+
+    void refresh(true)
+    const onVisible = () => void refresh(false)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    window.addEventListener('pageshow', onVisible)
+    const tick = window.setInterval(() => void refresh(false), 30000)
     return () => {
       cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+      window.removeEventListener('pageshow', onVisible)
+      window.clearInterval(tick)
     }
   }, [])
 

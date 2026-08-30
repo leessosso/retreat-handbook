@@ -24,7 +24,10 @@ function headers() {
 export async function fetchRemoteHandbook(): Promise<HandbookData | null> {
   if (!isRemoteConfigured()) return null
   const res = await fetch(`${supabaseUrl()}/rest/v1/handbook?id=eq.current&select=payload`, {
-    headers: headers(),
+    headers: {
+      ...headers(),
+      'Cache-Control': 'no-cache',
+    },
     cache: 'no-store',
   })
   if (!res.ok) return null

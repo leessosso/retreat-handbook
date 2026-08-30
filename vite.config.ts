@@ -44,15 +44,17 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\/handbook/,
+            handler: 'NetworkOnly',
+          },
+          {
             urlPattern: /\/handbook\.json(?:\?.*)?$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'handbook-content',
-              networkTimeoutSeconds: 4,
-              cacheableResponse: { statuses: [0, 200] },
-            },
+            handler: 'NetworkOnly',
           },
         ],
       },
